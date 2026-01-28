@@ -15,6 +15,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@wxt-dev/storage": "^1.2.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
     "typescript": "^5.9.3",
+    "vite-plugin-node-polyfills": "^0.25.0",
     "wxt": "^0.20.6"
   }
 }
