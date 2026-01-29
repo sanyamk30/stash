@@ -16,3 +16,8 @@ export const walletStorage = storage.defineItem<WalletState>(
     },
   },
 );
+
+export const encryptedVault = storage.defineItem<string | null>(
+  "local:encrypted_vault",
+  { fallback: null },
+);

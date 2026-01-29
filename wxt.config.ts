@@ -11,6 +11,6 @@ export default defineConfig({
 
   manifest: {
     name: "Stash (Web3 Wallet)",
-    permissions: ["storage"],
+    permissions: ["storage", "clipboardWrite"],
   },
 });
