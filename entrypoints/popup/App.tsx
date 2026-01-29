@@ -1,39 +1,26 @@
-import { useState } from "react";
-import "./App.css";
-import { WalletState, walletStorage } from "@/assets/storage";
+import { useState, useEffect } from "react";
+import "@/assets/main.css";
+import { walletStorage } from "@/assets/storage";
+import OnboardingStart from "@/components/ui/OnboardingStart";
 
-function App() {
-  const [state, setState] = useState<WalletState | null>(null);
+export default function App() {
+  const [hasWallet, setHasWallet] = useState<boolean | null>(null);
+  const [onboarding, setOnboarding] = useState(false);
 
   useEffect(() => {
-    walletStorage.getValue().then(setState);
-
-    const unwatch = walletStorage.watch(setState);
-    return () => unwatch();
+    walletStorage.getValue().then((val) => setHasWallet(!!val.address));
   }, []);
 
-  const handleReset = async () => {
-    await walletStorage.removeValue();
-    // State updates automatically via watch()
-  };
+  if (hasWallet === null)
+    return <div className="p-4 text-center">Initializing...</div>; // Wait for storage load
 
-  if (!state) return <div>Loading...</div>;
+  if (!hasWallet && !onboarding) {
+    return <OnboardingStart onNext={() => setOnboarding(true)} />;
+  }
 
-  return (
-    <div style={{ width: 300, padding: 16 }}>
-      <h2>Backpack Clone . Why can i not see anything</h2>
-      {state.address ? (
-        <div>
-          <p>
-            Address: {state.address.slice(0, 6)}...{state.address.slice(-4)}
-          </p>
-          <button onClick={handleReset}>Logout / Reset</button>
-        </div>
-      ) : (
-        <p>No wallet found. Please create one.</p>
-      )}
-    </div>
-  );
+  if (onboarding) {
+    return <div className="p-8">Step 2: Create Password UI goes here!</div>;
+  }
+
+  return <div className="p-8 font-bold">Dashboard (Wallet Found)</div>;
 }
-
-export default App;
