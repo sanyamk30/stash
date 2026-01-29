@@ -40,7 +40,8 @@ export function MnemonicReveal({
 
   useEffect(() => {
     const entropy = ethers.randomBytes(16);
-    const phrase = ethers.Mnemonic.fromEntropy(entropy).phrase;
+    const mnemonic = ethers.Mnemonic.fromEntropy(entropy);
+    const { phrase } = mnemonic;
     setMnemonic(phrase.split(" "));
   }, []);
 

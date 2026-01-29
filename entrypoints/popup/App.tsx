@@ -4,6 +4,7 @@ import { walletStorage } from "@/assets/storage";
 import OnboardingStart from "@/components/ui/OnboardingStart";
 import { PasswordCreate } from "@/components/ui/PasswordCreate";
 import { MnemonicReveal } from "@/components/ui/MnemonicReveal";
+import { Dashboard } from "@/components/ui/Dashboard";
 
 type Step = "landing" | "password" | "mnemonic" | "dashboard";
 
@@ -50,7 +51,8 @@ export default function App() {
       )}
 
       {currentStep === "dashboard" && (
-        <div className="p-8 font-bold text-center">Welcome to your Wallet</div>
+        // <Dashboard onLock={() => setCurrentStep("password")} />
+        <Dashboard />
       )}
     </div>
   );

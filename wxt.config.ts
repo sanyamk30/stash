@@ -12,5 +12,6 @@ export default defineConfig({
   manifest: {
     name: "Stash (Web3 Wallet)",
     permissions: ["storage", "clipboardWrite"],
+    host_permissions: ["https://api.coingecko.com/"],
   },
 });
