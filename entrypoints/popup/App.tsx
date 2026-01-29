@@ -6,14 +6,17 @@ import { PasswordCreate } from "@/components/ui/PasswordCreate";
 import { MnemonicReveal } from "@/components/ui/MnemonicReveal";
 import { Dashboard } from "@/components/ui/Dashboard";
 import { Unlock } from "@/components/ui/Unlock";
+import { WalletImport } from "@/components/ui/WalletImport";
 
-type Step = "landing" | "password" | "mnemonic" | "dashboard";
+type Step = "landing" | "password" | "mnemonic" | "dashboard" | "import";
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>("landing");
   const [hasWallet, setHasWallet] = useState<boolean | null>(null);
   const [isLocked, setIsLocked] = useState<boolean>(true);
   const [password, setPassword] = useState("");
+
+  const [tempMnemonic, setTempMnemonic] = useState<string | null>(null);
 
   useEffect(() => {
     walletStorage.getValue().then((val) => {
@@ -26,12 +29,10 @@ export default function App() {
       }
     });
 
-    // Listen for storage changes (e.g. if background script locks the wallet)
     const unwatch = walletStorage.watch((val) => {
-      // [!code ++]
-      setIsLocked(val.isLocked); // [!code ++]
-    }); // [!code ++]
-    return () => unwatch(); // [!code ++]
+      setIsLocked(val.isLocked);
+    });
+    return () => unwatch();
   }, []);
 
   if (hasWallet === null)
@@ -43,8 +44,25 @@ export default function App() {
       {!hasWallet && (
         <>
           {currentStep === "landing" && (
-            <OnboardingStart onNext={() => setCurrentStep("password")} />
+            <OnboardingStart
+              onNext={() => {
+                setCurrentStep("password");
+                setTempMnemonic(null);
+              }}
+              onImport={() => setCurrentStep("import")}
+            />
           )}
+
+          {currentStep === "import" && (
+            <WalletImport
+              onBack={() => setCurrentStep("landing")}
+              onNext={(phrase) => {
+                setTempMnemonic(phrase); // Store the phrase to encrypt later
+                setCurrentStep("password");
+              }}
+            />
+          )}
+
           {currentStep === "password" && (
             <PasswordCreate
               onNext={(pwd) => {
@@ -54,9 +72,11 @@ export default function App() {
               onBack={() => setCurrentStep("landing")}
             />
           )}
+
           {currentStep === "mnemonic" && (
             <MnemonicReveal
               password={password}
+              importedMnemonic={tempMnemonic}
               onComplete={() => {
                 setHasWallet(true);
                 setIsLocked(false);

@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { RocketIcon, ShieldCheck } from "lucide-react";
 
-export const OnboardingStart = ({ onNext }: { onNext: () => void }) => {
+export const OnboardingStart = ({
+  onNext,
+  onImport,
+}: {
+  onNext: () => void;
+  onImport: () => void;
+}) => {
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-8 h-full">
       <div className="flex flex-col items-center space-y-2 text-center">
@@ -18,7 +24,11 @@ export const OnboardingStart = ({ onNext }: { onNext: () => void }) => {
         <Button className="w-full h-12 text-md font-semibold" onClick={onNext}>
           Create a new wallet
         </Button>
-        <Button variant="outline" className="w-full h-12 text-md">
+        <Button
+          variant="outline"
+          className="w-full h-12 text-md"
+          onClick={onImport}
+        >
           Import existing wallet
         </Button>
       </div>

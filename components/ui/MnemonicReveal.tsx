@@ -7,9 +7,11 @@ import { walletStorage, encryptedVault } from "@/assets/storage";
 
 export function MnemonicReveal({
   password,
+  importedMnemonic,
   onComplete,
 }: {
   password: string;
+  importedMnemonic: string | null;
   onComplete: () => void;
 }) {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
@@ -39,11 +41,15 @@ export function MnemonicReveal({
   };
 
   useEffect(() => {
-    const entropy = ethers.randomBytes(16);
-    const mnemonic = ethers.Mnemonic.fromEntropy(entropy);
-    const { phrase } = mnemonic;
-    setMnemonic(phrase.split(" "));
-  }, []);
+    if (importedMnemonic) {
+      setMnemonic(importedMnemonic.split(" "));
+    } else {
+      const entropy = ethers.randomBytes(16);
+      const mnemonic = ethers.Mnemonic.fromEntropy(entropy);
+      const { phrase } = mnemonic;
+      setMnemonic(phrase.split(" "));
+    }
+  }, [importedMnemonic]);
 
   return (
     <div className="flex flex-col h-full space-y-6">

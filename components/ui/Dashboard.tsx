@@ -56,14 +56,14 @@ export function Dashboard() {
       </div>
 
       {/* TODO : Primary Actions */}
-      <div className="grid grid-cols-2 gap-4 px-2">
+      {/* <div className="grid grid-cols-2 gap-4 px-2">
         <Button className="w-full bg-primary text-primary-foreground h-12">
           <Send className="mr-2 h-4 w-4" /> Send
         </Button>
         <Button variant="secondary" className="w-full h-12">
           <ArrowDownLeft className="mr-2 h-4 w-4" /> Receive
         </Button>
-      </div>
+      </div> */}
 
       {/* Tabs for Assets/Activity */}
       <Tabs defaultValue="assets" className="w-full pt-4">
