@@ -14,7 +14,7 @@ export const OnboardingStart = ({
         <div className="p-3 rounded-2xl bg-primary/10 mb-2">
           <RocketIcon className="w-10 h-10 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Backpack Clone</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Stash</h1>
         <p className="text-muted-foreground text-sm px-4">
           The non-custodial wallet for the next generation of web3.
         </p>

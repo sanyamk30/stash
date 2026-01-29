@@ -57,7 +57,7 @@ export default function App() {
             <WalletImport
               onBack={() => setCurrentStep("landing")}
               onNext={(phrase) => {
-                setTempMnemonic(phrase); // Store the phrase to encrypt later
+                setTempMnemonic(phrase);
                 setCurrentStep("password");
               }}
             />
