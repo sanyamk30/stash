@@ -1,27 +1,37 @@
 import { useState, useEffect } from "react";
 import "@/assets/main.css";
 import { walletStorage } from "@/assets/storage";
-import OnboardingStart from "@/components/ui/OnboardingStart";
+import { OnboardingStart } from "@/components/ui/OnboardingStart";
 import { PasswordCreate } from "@/components/ui/PasswordCreate";
 import { MnemonicReveal } from "@/components/ui/MnemonicReveal";
 import { Dashboard } from "@/components/ui/Dashboard";
+import { Unlock } from "@/components/ui/Unlock";
 
 type Step = "landing" | "password" | "mnemonic" | "dashboard";
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>("landing");
   const [hasWallet, setHasWallet] = useState<boolean | null>(null);
+  const [isLocked, setIsLocked] = useState<boolean>(true);
   const [password, setPassword] = useState("");
 
   useEffect(() => {
     walletStorage.getValue().then((val) => {
       if (val.address) {
         setHasWallet(true);
-        setCurrentStep("dashboard");
+        setIsLocked(val.isLocked);
+        setCurrentStep(val.isLocked ? "landing" : "dashboard");
       } else {
         setHasWallet(false);
       }
     });
+
+    // Listen for storage changes (e.g. if background script locks the wallet)
+    const unwatch = walletStorage.watch((val) => {
+      // [!code ++]
+      setIsLocked(val.isLocked); // [!code ++]
+    }); // [!code ++]
+    return () => unwatch(); // [!code ++]
   }, []);
 
   if (hasWallet === null)
@@ -29,31 +39,39 @@ export default function App() {
 
   return (
     <div className="w-[360px] min-h-[500px] bg-background p-4">
-      {currentStep === "landing" && (
-        <OnboardingStart onNext={() => setCurrentStep("password")} />
+      {/* 1. Onboarding Flow (No Wallet) */}
+      {!hasWallet && (
+        <>
+          {currentStep === "landing" && (
+            <OnboardingStart onNext={() => setCurrentStep("password")} />
+          )}
+          {currentStep === "password" && (
+            <PasswordCreate
+              onNext={(pwd) => {
+                setPassword(pwd);
+                setCurrentStep("mnemonic");
+              }}
+              onBack={() => setCurrentStep("landing")}
+            />
+          )}
+          {currentStep === "mnemonic" && (
+            <MnemonicReveal
+              password={password}
+              onComplete={() => {
+                setHasWallet(true);
+                setIsLocked(false);
+                setCurrentStep("dashboard");
+              }}
+            />
+          )}
+        </>
       )}
 
-      {currentStep === "password" && (
-        <PasswordCreate
-          onNext={(pwd) => {
-            setPassword(pwd);
-            setCurrentStep("mnemonic");
-          }}
-          onBack={() => setCurrentStep("landing")}
-        />
-      )}
+      {/* 2. Unlock Screen (Wallet exists but is Locked) */}
+      {hasWallet && isLocked && <Unlock onUnlock={() => setIsLocked(false)} />}
 
-      {currentStep === "mnemonic" && (
-        <MnemonicReveal
-          password={password}
-          onComplete={() => setCurrentStep("dashboard")}
-        />
-      )}
-
-      {currentStep === "dashboard" && (
-        // <Dashboard onLock={() => setCurrentStep("password")} />
-        <Dashboard />
-      )}
+      {/* 3. Dashboard (Wallet exists and is Unlocked) */}
+      {hasWallet && !isLocked && <Dashboard />}
     </div>
   );
 }

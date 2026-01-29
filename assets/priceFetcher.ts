@@ -1,6 +1,5 @@
 export const getEthPriceInUsd = async (): Promise<number> => {
   try {
-    // UPDATED URL: Use the stable /simple/price endpoint
     const response = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
     );
@@ -17,7 +16,6 @@ export const getEthPriceInUsd = async (): Promise<number> => {
     return data.ethereum.usd;
   } catch (error) {
     console.error("Error fetching ETH price:", error);
-    // Fallback to 0 if API fails, so the app doesn't crash
     return 0;
   }
 };

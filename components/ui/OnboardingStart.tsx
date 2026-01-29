@@ -1,14 +1,7 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { RocketIcon, ShieldCheck } from "lucide-react";
 
-const OnboardingStart = ({ onNext }: { onNext: () => void }) => {
+export const OnboardingStart = ({ onNext }: { onNext: () => void }) => {
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-8 h-full">
       <div className="flex flex-col items-center space-y-2 text-center">
@@ -37,5 +30,3 @@ const OnboardingStart = ({ onNext }: { onNext: () => void }) => {
     </div>
   );
 };
-
-export default OnboardingStart;
