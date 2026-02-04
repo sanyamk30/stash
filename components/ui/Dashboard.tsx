@@ -1,42 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { walletStorage } from "@/assets/storage";
-import { Copy, Send, ArrowDownLeft, Lock, Check } from "lucide-react";
-import { useEthBalance } from "@/hooks/useEthBalance";
+import { Lock } from "lucide-react";
+import { walletStorage, WalletState } from "@/assets/storage";
+import { useBalance } from "@/hooks/useBalance";
+import { WalletDetailsModal } from "@/components/ui/WalletDetailsModal";
+import { DashboardHeader } from "@/components/ui/DashboardHeader";
+import { BalanceDisplay } from "@/components/ui/BalanceDisplay";
+import { AssetsList } from "@/components/ui/AssetsList";
+import { CHAIN_CONFIGS, ChainType } from "@/assets/chainConfig";
 
 export function Dashboard() {
+  const [walletState, setWalletState] = useState<WalletState | null>(null);
   const [copied, setCopied] = useState(false);
-  const { address, ethBalance, usdValue, loading } = useEthBalance();
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Fetch balance only for the currently selected chain
+  const currentChain = walletState?.selectedChain || "ethereum";
+  const currentBalanceData = useBalance(currentChain);
+
+  useEffect(() => {
+    walletStorage.getValue().then(setWalletState);
+
+    const unwatch = walletStorage.watch((val) => {
+      setWalletState(val);
+    });
+    return () => unwatch();
+  }, []);
 
   const handleLock = async () => {
     const current = await walletStorage.getValue();
     await walletStorage.setValue({ ...current, isLocked: true });
   };
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleSelectChain = async (chain: ChainType) => {
+    const current = await walletStorage.getValue();
+    await walletStorage.setValue({ ...current, selectedChain: chain });
   };
+
+  const copyAddress = () => {
+    if (currentBalanceData) {
+      navigator.clipboard.writeText(currentBalanceData.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!walletState) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
+
+  const currentAccount = walletState.chains[currentChain]?.accounts["0"];
+  const chainConfig = CHAIN_CONFIGS[currentChain as ChainType];
+
+  if (!currentAccount) {
+    return (
+      <div className="p-4 text-center space-y-4">
+        <p>No wallet found for {chainConfig.name}</p>
+        <Button onClick={() => handleSelectChain("ethereum")}>
+          Back to Ethereum
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      {/* Header: Address & Lock */}
-      <div className="flex justify-between items-center px-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="font-mono text-xs"
-          onClick={copyAddress}
-        >
-          {address.slice(0, 6)}...{address.slice(-4)}
-          {copied ? (
-            <Check className="ml-2 h-3 w-3 text-green-500 animate-in zoom-in" />
-          ) : (
-            <Copy className="ml-2 h-3 w-3" />
-          )}
-        </Button>
+      {/* Lock Button - Top Right */}
+      <div className="flex justify-end">
         <Button
           variant="ghost"
           size="icon"
@@ -47,53 +77,40 @@ export function Dashboard() {
         </Button>
       </div>
 
+      {/* Header */}
+      <DashboardHeader
+        walletState={walletState}
+        address={currentBalanceData.address}
+        copied={copied}
+        onSelectChain={handleSelectChain}
+        onCopyAddress={copyAddress}
+        onShowDetails={() => setShowDetailsModal(true)}
+      />
+
       {/* Balance Display */}
-      <div className="flex flex-col items-center py-4 space-y-1">
-        <span className="text-4xl font-bold">
-          {loading ? "..." : `$${usdValue}`}
-        </span>
-        <span className="text-muted-foreground text-sm">{ethBalance} ETH</span>
-      </div>
+      <BalanceDisplay
+        balance={currentBalanceData.balance}
+        symbol={CHAIN_CONFIGS[currentChain].symbol}
+        usdValue={currentBalanceData.usdValue}
+        loading={currentBalanceData.loading}
+      />
 
-      {/* TODO : Primary Actions */}
-      {/* <div className="grid grid-cols-2 gap-4 px-2">
-        <Button className="w-full bg-primary text-primary-foreground h-12">
-          <Send className="mr-2 h-4 w-4" /> Send
-        </Button>
-        <Button variant="secondary" className="w-full h-12">
-          <ArrowDownLeft className="mr-2 h-4 w-4" /> Receive
-        </Button>
-      </div> */}
+      {/* Assets List */}
+      <AssetsList
+        chain={currentChain}
+        balance={currentBalanceData.balance}
+        symbol={CHAIN_CONFIGS[currentChain].symbol}
+        usdValue={currentBalanceData.usdValue}
+      />
 
-      {/* Tabs for Assets/Activity */}
-      <Tabs defaultValue="assets" className="w-full pt-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="assets">Assets</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
-        <TabsContent value="assets" className="pt-4">
-          <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-blue-500">
-                E
-              </div>
-              <div>
-                <p className="font-medium">Ethereum</p>
-                <p className="text-xs text-muted-foreground">
-                  {ethBalance} ETH
-                </p>
-              </div>
-            </div>
-            <p className="font-medium">${usdValue}</p>
-          </div>
-        </TabsContent>
-        <TabsContent
-          value="activity"
-          className="text-center py-10 text-muted-foreground text-sm"
-        >
-          No recent activity found.
-        </TabsContent>
-      </Tabs>
+      {/* Wallet Details Modal */}
+      {showDetailsModal && (
+        <WalletDetailsModal
+          chain={currentChain}
+          wallet={currentAccount}
+          onClose={() => setShowDetailsModal(false)}
+        />
+      )}
     </div>
   );
 }

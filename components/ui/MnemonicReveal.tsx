@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Check, ShieldAlert } from "lucide-react";
-import { walletStorage, encryptedVault } from "@/assets/storage";
+import { walletStorage, encryptedVault, ChainAccounts } from "@/assets/storage";
+import { ChainType } from "@/assets/chainConfig";
+import { generateWalletsForChains } from "@/assets/walletGenerator";
+import { ethers } from "ethers";
 
 export function MnemonicReveal({
   password,
   importedMnemonic,
+  selectedChains,
   onComplete,
 }: {
   password: string;
   importedMnemonic: string | null;
+  selectedChains: ChainType[];
   onComplete: () => void;
 }) {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
@@ -26,18 +30,37 @@ export function MnemonicReveal({
 
   const handleFinish = async () => {
     const phrase = mnemonic.join(" ");
-    const wallet = ethers.Wallet.fromPhrase(phrase);
 
-    const encrypted = await wallet.encrypt(password);
+    try {
+      const wallets = generateWalletsForChains(phrase, selectedChains, 0);
 
-    await encryptedVault.setValue(encrypted);
-    await walletStorage.setValue({
-      address: wallet.address,
-      publicKey: wallet.signingKey.publicKey,
-      isLocked: false,
-    });
+      const chainsData: Record<string, ChainAccounts> = {};
+      for (const chain of selectedChains) {
+        const wallet = wallets[chain];
+        chainsData[chain] = {
+          accounts: {
+            "0": wallet,
+          },
+          activeAccount: "0",
+        };
+      }
 
-    onComplete();
+      // Encrypt the mnemonic using the Ethereum wallet
+      const ethWallet = ethers.Wallet.fromPhrase(phrase);
+      const encrypted = await ethWallet.encrypt(password);
+
+      // Save encrypted vault and wallet storage
+      await encryptedVault.setValue(encrypted);
+      await walletStorage.setValue({
+        chains: chainsData,
+        selectedChain: selectedChains[0],
+        isLocked: false,
+      });
+
+      onComplete();
+    } catch (error) {
+      console.error("Error finishing wallet setup:", error);
+    }
   };
 
   useEffect(() => {
@@ -45,8 +68,8 @@ export function MnemonicReveal({
       setMnemonic(importedMnemonic.split(" "));
     } else {
       const entropy = ethers.randomBytes(16);
-      const mnemonic = ethers.Mnemonic.fromEntropy(entropy);
-      const { phrase } = mnemonic;
+      const mnemonicObj = ethers.Mnemonic.fromEntropy(entropy);
+      const { phrase } = mnemonicObj;
       setMnemonic(phrase.split(" "));
     }
   }, [importedMnemonic]);
@@ -56,7 +79,8 @@ export function MnemonicReveal({
       <div className="space-y-2">
         <h2 className="text-xl font-bold">Secret Recovery Phrase</h2>
         <p className="text-sm text-muted-foreground">
-          This phrase is the ONLY way to recover your wallet. Write it down.
+          This phrase is the ONLY way to recover your wallet. Write it down. It
+          works for all selected blockchains.
         </p>
       </div>
 
